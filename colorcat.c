@@ -31,6 +31,7 @@ static void Scolor(uint color);
 static void color(uint color);
 static void pchar(const char* str,uint start);
 static void help(int code);
+static double dmod(double x, double y);
 
 /* Random start*/
 static void init_rand();
@@ -74,6 +75,9 @@ static void init_rand(){
 }
 /* Random end */
 
+double dmod(double x, double y) {
+    return x - (int)(x/y) * y;
+}
 
 static void clear(int sig){
   puts("\033[0m");
@@ -87,8 +91,7 @@ static uint hue_to_ansiNum(double hue) {
   double p, q, t, ff;
   double r, g, b;
   long i;
-  if(hue >= 360.0)
-    hue = 0.0;
+  hue = dmod(hue,360.0);
   hue /= 60.0;
   i = (long)hue;
   ff = hue - i;
