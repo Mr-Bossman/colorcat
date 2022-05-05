@@ -112,6 +112,30 @@ static void clear(int sig)
   exit(sig);
 }
 
+static void strip_ansi(char * str) {
+  const size_t len = strlen(str);
+  char *ptr = str;
+  char *ptr2;
+  while(1)
+  {
+    ptr = strchr(ptr,'\033');
+    if (!ptr)
+      return;
+    ptr2 = strchr(ptr,'m');
+    char chk[] ="hldABCDEFGHJKSTfinsu0123456789";
+    for (size_t i = 0; (!ptr2 || (ptr2-ptr) > 10) && i < ((sizeof chk) - 1); i++)
+    {
+     ptr2 = strchr(ptr,chk[i]);
+    }
+    if (!ptr2 || (ptr2-ptr) > 10)
+    {
+      ptr++;
+      continue;
+    }
+    memcpy(ptr, ptr2 + 1, len - (ptr2 - str));
+  }
+}
+
 static uint hue_to_ansiNum(double hue)
 {
   const double sat = 1.0;
@@ -309,6 +333,7 @@ int main(int argc, char **argv)
   int curent_color = 0;
   while ((lineSize = getline(&line, &len, fp)) != -1)
   {
+    strip_ansi(line);
     if (random_start_color)
       curent_color = c_rand() % color_count;
     color(curent_color);
