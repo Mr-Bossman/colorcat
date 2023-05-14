@@ -51,13 +51,13 @@ static void help(int code);
 static double dmod(double x, double y);
 
 /* Random start*/
-static void init_rand();
-static int c_rand();
-static long long time_millis();
+static void init_rand(void);
+static int c_rand(void);
+static long long time_millis(void);
 static FILE *Fdat;
 
 #ifdef POSIX
-static long long time_millis()
+static long long time_millis(void)
 {
  	struct timeval te;
  	gettimeofday(&te, NULL);
@@ -65,7 +65,7 @@ static long long time_millis()
  	return milliseconds;
 }
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32)
-static long long time_millis()
+static long long time_millis(void)
 {
  	SYSTEMTIME time;
  	GetSystemTime(&time);
@@ -73,30 +73,30 @@ static long long time_millis()
  	return time_ms;
 }
 #else
-static long long time_millis()
+static long long time_millis(void)
 {
  	return time(NULL);
 }
 #endif
 
-static int c_rand()
+static int c_rand(void)
 {
  	if (!Fdat)
  	{
- 		srand(time_millis(NULL) + rand());
+		srand(time_millis() + rand());
  		return rand();
  	}
  	else
  	{
- 		int rand_data;
+		int rand_data;
  		fread(&rand_data, 1, sizeof(int), Fdat);
  		return rand_data;
  	}
 }
-static void init_rand()
+static void init_rand(void)
 {
  	Fdat = fopen("/dev/urandom", "r");
- 	srand(time_millis(NULL));
+	srand(time_millis());
 }
 /* Random end */
 
@@ -107,12 +107,13 @@ double dmod(double x, double y)
 
 static void clear(int sig)
 {
- 	puts("\033[0m");
+	puts("\033[0m");
  	fclose(Fdat);
  	exit(sig);
 }
 
-static void strip_ansi(char * str) {
+static void strip_ansi(char * str)
+{
  	const size_t len = strlen(str);
  	char *ptr = str;
  	char *ptr2;
@@ -125,7 +126,7 @@ static void strip_ansi(char * str) {
  		char chk[] ="hldABCDEFGHJKSTfinsu0123456789";
  		for (size_t i = 0; (!ptr2 || (ptr2-ptr) > 10) && i < ((sizeof chk) - 1); i++)
  		{
- 		 ptr2 = strchr(ptr,chk[i]);
+			ptr2 = strchr(ptr,chk[i]);
  		}
  		if (!ptr2 || (ptr2-ptr) > 10)
  		{
