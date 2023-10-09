@@ -10,6 +10,7 @@ colorcat@colorcat:~$colorcat -h
 | -r - Random line color.                |
 | -R - All random color.                 |
 | -5 - Dissable 8-bit mode.              |
+| -B - Use bold as bright color.         |
 | -s - Starting color in hue 360*.       |
 | -a - Total shades to use.              |
 | -A - Color shift amount for new lines. |
