@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-gcc -Wall -pedantic colorcat.c -o colorcat
+gcc -Wall -Wextra -Wpedantic colorcat.c -o colorcat

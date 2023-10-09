@@ -35,6 +35,7 @@ ssize_t getline(char **ptr, size_t *n, FILE *stream)
 extern char *optarg;
 
 static bool color_256 = true;
+static bool color_bold = false;
 static bool each_char = true;
 static bool rotate_color = true;	// inside chars only works if each char is chosen
 static bool random_start_color = false;
@@ -205,7 +206,7 @@ static void color(uint color)
 		color %= 13;
 		color++;
 		if (color > 7)
-			printf("\033[9%um", color - 7);
+			printf("\033[%s%um", (color_bold)? "1;3" : "9", color - 7);
 		else
 			printf("\033[3%um", color);
 	}
@@ -235,6 +236,7 @@ static void help(int code)
 	puts("| -r - Random line color.                |");
 	puts("| -R - All random color.                 |");
 	puts("| -5 - Dissable 8-bit mode.              |");
+	puts("| -B - Use bold as bright color.         |");
 	puts("| -s - Starting color in hue 360*.       |");
 	puts("| -a - Total shades to use.              |");
 	puts("| -A - Color shift amount for new lines. |");
@@ -249,7 +251,7 @@ int main(int argc, char **argv)
 	signal(SIGABRT, clear);
 	FILE *fp = stdin;
 	int opt;
-	while ((opt = getopt(argc, argv, "CrRh5a:s:A:")) != -1)
+	while ((opt = getopt(argc, argv, "CrRh5Ba:s:A:")) != -1)
 	{
 		switch (opt)
 		{
@@ -264,6 +266,9 @@ int main(int argc, char **argv)
 			break;
 		case '5':
 			color_256 = false;
+			break;
+		case 'B':
+			color_bold = true;
 			break;
 		case 'h':
 			help(0);
@@ -331,7 +336,7 @@ int main(int argc, char **argv)
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t lineSize = 0;
-	int curent_color = 0;
+	uint curent_color = 0;
 	while ((lineSize = getline(&line, &len, fp)) != -1)
 	{
 		strip_ansi(line);
