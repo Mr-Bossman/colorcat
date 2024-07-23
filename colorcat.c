@@ -117,28 +117,44 @@ static void clear(int sig)
 static void strip_ansi(char * str)
 {
 	const size_t len = strlen(str);
-	const char chk[] = "hldABCDEFGHJKSTfinsu0123456789";
-	size_t i;
-	char *ptr2, *ptr = str;
+	const char chk[] = "0123456789:;<=>?";
+	size_t count;
 
 	while(1)
 	{
-		ptr = strchr(ptr,'\033');
-		if (!ptr)
+		str = strstr(str,"\033[");
+		if (!str)
 			return;
-		ptr2 = strchr(ptr,'m');
 
-		for (i = 0; (!ptr2 || (ptr2-ptr) > 10) && i < ((sizeof chk) - 1); i++)
-		{
-			ptr2 = strchr(ptr,chk[i]);
-		}
-		if (!ptr2 || (ptr2-ptr) > 10)
-		{
-			ptr++;
+		count = strspn(str + 2, chk);
+		if(count == 0 || str[count + 2] != 'm') {
+
+			str++;
 			continue;
 		}
-		memcpy(ptr, ptr2 + 1, len - (ptr2 - str));
+
+		memcpy(str, str + count + 3, len - count);
 	}
+}
+
+static size_t get_ansi(const char *str)
+{
+	size_t i = 1;
+
+	while(*str)
+	{
+		if(*str == '[') {
+			str++;
+			i++;
+			continue;
+		}
+
+		if(*str >= '@' && *str <= '~')
+			break;
+		i++;
+		str++;
+	}
+	return i;
 }
 
 static uint hue_to_ansiNum(double hue)
@@ -219,9 +235,18 @@ static void color(uint color)
 static void pchar(const char *str, uint start)
 {
 	uint curent_color = start;
+	int i = 0;
 
 	while (*str)
 	{
+		while(*str == '\033')
+		{
+			i = get_ansi(str);
+			printf("%.*s", i, str);
+			str += i;
+			if (!*str)
+				return;
+		}
 		if (!rotate_color)
 			curent_color = c_rand() % color_count;
 		color(curent_color);
