@@ -40,6 +40,7 @@ static bool each_char = true;
 static bool rotate_color = true;	// inside chars only works if each char is chosen
 static bool random_start_color = false;
 static uint color_count = 50;		// N hues
+static bool start_color_set = false;	// Starting hue
 static uint start_count = 0;		// Starting hue
 static uint shift_c = 1;
 
@@ -160,7 +161,7 @@ static size_t get_ansi(const char *str)
 static uint hue_to_ansiNum(double hue)
 {
 	const double sat = 1.0;
-	const double gam = 0.75;
+	const double gam = 0.99;
 	double p, q, t, ff;
 	double r, g, b;
 	long i;
@@ -220,7 +221,7 @@ static void Scolor(uint color)
 static void color(uint color)
 {
 	if (color_256)
-		Scolor(hue_to_ansiNum(((color * 360) / color_count) + start_count));
+		Scolor(hue_to_ansiNum(((color * 360.0) / (double)color_count) + start_count));
 	else
 	{
 		color %= 13;
@@ -258,32 +259,54 @@ static void pchar(const char *str, uint start)
 	}
 }
 
+static void puts_color(char *line) {
+	static uint curent_color = 0;
+
+	if(!start_color_set) {
+		curent_color = c_rand() % color_count;
+		start_color_set = true;
+	}
+
+	strip_ansi(line);
+	if (random_start_color)
+		curent_color = c_rand() % color_count;
+	color(curent_color);
+	if (each_char)
+		pchar(line, curent_color);
+	else
+		printf("%s", line);
+	curent_color += shift_c;
+	if (curent_color <= 0)
+		curent_color = color_count - 1;
+	if (curent_color >= color_count)
+		curent_color = 0;
+}
+
 static void help(int code)
 {
-	puts("+----------------------------------------+");
-	puts("| -h - This message.                     |");
-	puts("| -C - Only change whole line color.     |");
-	puts("| -r - Random line color.                |");
-	puts("| -R - All random color.                 |");
-	puts("| -5 - Dissable 8-bit mode.              |");
-	puts("| -B - Use bold as bright color.         |");
-	puts("| -s - Starting color in hue 360*.       |");
-	puts("| -a - Total shades to use.              |");
-	puts("| -A - Color shift amount for new lines. |");
-	puts("+----------------------------------------+");
+	puts_color("+------------------------------------------------+\n");
+	puts_color("| -h - This message.                             |\n");
+	puts_color("| -C - Only change whole line color.             |\n");
+	puts_color("| -r - Random line color.                        |\n");
+	puts_color("| -R - All random color.                         |\n");
+	puts_color("| -5 - Dissable 8-bit mode.                      |\n");
+	puts_color("| -B - Use bold as bright color.                 |\n");
+	puts_color("| -s - Starting color in hue 360*. (phase)       |\n");
+	puts_color("| -f - Total shades to use. (frequency)          |\n");
+	puts_color("| -a - Color shift amount for new lines. (angle) |\n");
+	puts_color("+------------------------------------------------+\n");
 	exit(code);
 }
 
 int main(int argc, char **argv)
 {
-	const char var_opts[] = "asA";
+	const char var_opts[] = "asf";
 	FILE *fp = stdin;
 	int opt;
 
 	char *line = NULL;
 	size_t i, len = 0;
 	ssize_t lineSize = 0;
-	uint curent_color = 0;
 	char opts[] = "-a";
 	bool file = true;
 
@@ -291,7 +314,7 @@ int main(int argc, char **argv)
 	signal(SIGTERM, clear);
 	signal(SIGABRT, clear);
 
-	while ((opt = getopt(argc, argv, "CrRh5Ba:s:A:")) != -1)
+	while ((opt = getopt(argc, argv, "CrRh5Ba:s:f:")) != -1)
 	{
 		switch (opt)
 		{
@@ -313,7 +336,7 @@ int main(int argc, char **argv)
 		case 'h':
 			help(0);
 			break;
-		case 'a':
+		case 'f':
 		{
 			errno = 0;
 			color_count = strtol(optarg, NULL, 10);
@@ -333,9 +356,10 @@ int main(int argc, char **argv)
 				printf("invalid value for -%c", opt);
 				help(EXIT_FAILURE);
 			}
+			start_color_set = true;
 			break;
 		}
-		case 'A':
+		case 'a':
 		{
 			errno = 0;
 			shift_c = strtol(optarg, NULL, 10);
@@ -372,21 +396,8 @@ int main(int argc, char **argv)
 	init_rand();
 
 	while ((lineSize = getline(&line, &len, fp)) != -1)
-	{
-		strip_ansi(line);
-		if (random_start_color)
-			curent_color = c_rand() % color_count;
-		color(curent_color);
-		if (each_char)
-			pchar(line, curent_color);
-		else
-			printf("%s", line);
-		curent_color += shift_c;
-		if (curent_color <= 0)
-			curent_color = color_count - 1;
-		if (curent_color >= color_count)
-			curent_color = 0;
-	}
+		puts_color(line);
+
 	free(line);
 	clear(0);
 	fclose(Fdat);
