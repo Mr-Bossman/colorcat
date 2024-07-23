@@ -55,23 +55,24 @@ static double dmod(double x, double y);
 static void init_rand(void);
 static int c_rand(void);
 static long long time_millis(void);
+
 static FILE *Fdat;
 
 #ifdef POSIX
 static long long time_millis(void)
 {
 	struct timeval te;
+
 	gettimeofday(&te, NULL);
-	long long milliseconds = te.tv_sec * 1000LL + te.tv_usec / 1000;
-	return milliseconds;
+	return te.tv_sec * 1000LL + te.tv_usec / 1000;
 }
 #elif defined(WIN32) || defined(_WIN32) || defined(__WIN32)
 static long long time_millis(void)
 {
 	SYSTEMTIME time;
+
 	GetSystemTime(&time);
-	LONG time_ms = (time.wSecond * 1000) + time.wMilliseconds;
-	return time_ms;
+	return (time.wSecond * 1000LL) + time.wMilliseconds;
 }
 #else
 static long long time_millis(void)
@@ -116,16 +117,18 @@ static void clear(int sig)
 static void strip_ansi(char * str)
 {
 	const size_t len = strlen(str);
-	char *ptr = str;
-	char *ptr2;
+	const char chk[] = "hldABCDEFGHJKSTfinsu0123456789";
+	size_t i;
+	char *ptr2, *ptr = str;
+
 	while(1)
 	{
 		ptr = strchr(ptr,'\033');
 		if (!ptr)
 			return;
 		ptr2 = strchr(ptr,'m');
-		char chk[] ="hldABCDEFGHJKSTfinsu0123456789";
-		for (size_t i = 0; (!ptr2 || (ptr2-ptr) > 10) && i < ((sizeof chk) - 1); i++)
+
+		for (i = 0; (!ptr2 || (ptr2-ptr) > 10) && i < ((sizeof chk) - 1); i++)
 		{
 			ptr2 = strchr(ptr,chk[i]);
 		}
@@ -145,6 +148,7 @@ static uint hue_to_ansiNum(double hue)
 	double p, q, t, ff;
 	double r, g, b;
 	long i;
+
 	hue = dmod(hue, 360.0);
 	hue /= 60.0;
 	i = (long)hue;
@@ -215,6 +219,7 @@ static void color(uint color)
 static void pchar(const char *str, uint start)
 {
 	uint curent_color = start;
+
 	while (*str)
 	{
 		if (!rotate_color)
@@ -246,11 +251,21 @@ static void help(int code)
 
 int main(int argc, char **argv)
 {
+	const char var_opts[] = "asA";
+	FILE *fp = stdin;
+	int opt;
+
+	char *line = NULL;
+	size_t i, len = 0;
+	ssize_t lineSize = 0;
+	uint curent_color = 0;
+	char opts[] = "-a";
+	bool file = true;
+
 	signal(SIGINT, clear);
 	signal(SIGTERM, clear);
 	signal(SIGABRT, clear);
-	FILE *fp = stdin;
-	int opt;
+
 	while ((opt = getopt(argc, argv, "CrRh5Ba:s:A:")) != -1)
 	{
 		switch (opt)
@@ -313,11 +328,8 @@ int main(int argc, char **argv)
 
 	if (*argv[argc - 1] != '-' && argc > 1)
 	{
-		char var_opts[] = "asA";
-		bool file = true;
-		for (size_t i = 0; i < sizeof(var_opts) - 1; i++)
+		for (i = 0; i < sizeof(var_opts) - 1; i++)
 		{
-			char opts[] = "-a";
 			opts[1] = var_opts[i];
 			if (!strcmp(argv[argc - 2], opts))
 				file = false;
@@ -333,10 +345,7 @@ int main(int argc, char **argv)
 		}
 	}
 	init_rand();
-	char *line = NULL;
-	size_t len = 0;
-	ssize_t lineSize = 0;
-	uint curent_color = 0;
+
 	while ((lineSize = getline(&line, &len, fp)) != -1)
 	{
 		strip_ansi(line);
